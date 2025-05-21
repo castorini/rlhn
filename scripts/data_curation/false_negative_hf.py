@@ -81,7 +81,16 @@ def main():
         output_file=args.output_file,
     )
 
-    ### Class the class on all examples in the dataset
+    ### Check the cost of the dataset
+    logging.info("Calculating the RLHN filtering the dataset...")
+    rlhn_class.cost(
+        prompt_cls=prompt_cls,
+        max_completion_tokens=args.max_completion_tokens,
+        temperature=args.temperature,
+        skip_query_ids=query_ids_finished,
+    )
+
+    ## Class the class on all examples in the dataset
     rlhn_class.call(
         prompt_cls=prompt_cls,
         max_completion_tokens=args.max_completion_tokens,

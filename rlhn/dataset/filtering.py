@@ -40,6 +40,52 @@ class RLHN:
         else:
             raise ValueError(f"Client {client_name} is not supported, currently only OpenAI Azure client is supported.")
 
+    @staticmethod
+    def format_example(example):
+        """Format the example to be used in the prompt."""
+        question = example['query']
+        positive_passage_text, positive_passage_ids = "", []
+        for idx, passage in enumerate(example['positive_passages']):
+            positive_passage_text += "P(0): " + passage['text'] + "\n\n"
+            positive_passage_ids.append(passage['docid'])
+
+        negative_passage_text, negative_passage_ids = "", []
+        for idx, passage in enumerate(example['negative_passages']):
+            negative_passage_text += f"Doc ({idx+1}): " + passage['text'] + "\n\n"
+            negative_passage_ids.append(passage['docid'])
+
+        kwargs = {
+                "question": question,
+                "ground_truth": positive_passage_text.strip(),
+                "documents": negative_passage_text.strip()
+        }
+        return kwargs, positive_passage_ids, negative_passage_ids
+
+    def cost(
+        self,
+        prompt_cls: RLHNPrompt,
+        max_completion_tokens: int = 2048,
+        temperature: float = 0.1,
+        skip_query_ids: list = [],
+    ):
+        overall_cost = 0.0
+        for example in tqdm(
+                self.hf_dataset,
+                total=len(self.hf_dataset),
+                desc=f"Filtering with {self.model_name_or_path} and prompt: {prompt_cls.version}"
+            ):
+            ### Check if the query id is skip query ids
+            if skip_query_ids:
+                if example["query_id"] in skip_query_ids:
+                    continue
+
+            kwargs, _, _ = self.format_example(example)
+            prompt = prompt_cls.get_prompt(**kwargs)
+            estimated_cost = self.model_client.cost(prompt=prompt, max_tokens=max_completion_tokens)
+            overall_cost += estimated_cost
+
+        ### Print the overall cost
+        logging.info(f"Estimated cost for the dataset: {overall_cost:.2f} USD for {len(self.hf_dataset)} examples...")
 
     def call(
             self,
@@ -64,26 +110,7 @@ class RLHN:
                     if example["query_id"] in skip_query_ids:
                         continue
 
-                # Sample positive passages
-                question = example['query']
-                positive_passage_text, positive_passage_ids = "", []
-                for idx, passage in enumerate(example['positive_passages']):
-                    positive_passage_text += "P(0): " + passage['text'] + "\n\n"
-                    positive_passage_ids.append(passage['docid'])
-
-                ### Sample negative passages
-                negative_passage_text, negative_passage_ids = "", []
-                for idx, passage in enumerate(example['negative_passages']):
-                    negative_passage_text += f"Doc ({idx+1}): " + passage['text'] + "\n\n"
-                    negative_passage_ids.append(passage['docid'])
-
-                ### Filter the dataset using the prompt
-                kwargs = {
-                    "question": question,
-                    "ground_truth": positive_passage_text,
-                    "documents": negative_passage_text,
-                }
-
+                kwargs, positive_passage_ids, negative_passage_ids = self.format_example(example)
                 prompt = prompt_cls.get_prompt(**kwargs)
                 output = self.model_client.response(
                     prompt=prompt,
