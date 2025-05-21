@@ -27,19 +27,9 @@ def main():
     parser.add_argument("--subset", type=str, required=True)
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--output_file", type=str, required=True)
-    parser.add_argument("--cache_dir", type=str, default="/mnt/users/n3thakur/cache")
     parser.add_argument("--max_completion_tokens", type=int, default=2048)
     parser.add_argument("--temperature", type=float, default=0.1)
-    parser.add_argument("--get_cost_estimate", action='store_true')
-    parser.add_argument("--batch_job", action='store_true')
     parser.add_argument("--prompt_version", type=str, default="v1")
-    parser.add_argument("--jobs_csv", type=str, default="openai_jobs.csv")
-    parser.add_argument("--chunk_size", type=int, default=5000)
-    parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--end", type=int, default=None)
-    parser.add_argument("--sample_max", type=int, default=200)
-    parser.add_argument("--query_ids_file", type=str, default=None)
-    parser.add_argument("--output_file_save", type=str, required=False, default=None)
     args = parser.parse_args()
 
     ### Load the filtered dataset query and positive passages as corpus
@@ -66,7 +56,7 @@ def main():
     query_ids_finished = []
     output_filepath = os.path.join(args.output_dir, f"{args.output_file}")
     if os.path.exists(output_filepath):
-        with open(output_filepath, "r") as f:
+        with open(output_filepath, "r", encoding="utf-8") as f:
             for line in f:
                 example = json.loads(line)
                 if "query_id" in example:
@@ -79,6 +69,7 @@ def main():
         model_name_or_path=args.model_name_or_path,
         output_dir=args.output_dir,
         output_file=args.output_file,
+        batch_jobs_csv=args.jobs_csv,
     )
 
     ### Check the cost of the dataset
@@ -90,13 +81,14 @@ def main():
         skip_query_ids=query_ids_finished,
     )
 
-    ## Class the class on all examples in the dataset
+    # Call one by one of the dataset
     rlhn_class.call(
         prompt_cls=prompt_cls,
         max_completion_tokens=args.max_completion_tokens,
         temperature=args.temperature,
         skip_query_ids=query_ids_finished,
     )
+
 
 if __name__ == "__main__":
     main()
