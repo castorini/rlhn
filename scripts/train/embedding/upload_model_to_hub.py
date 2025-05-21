@@ -34,7 +34,7 @@ python -m upload_model_to_hub \
 import torch
 from transformers import AutoTokenizer, AutoModel
 from peft import PeftModel
-from util import dot_score, mean_pooling, eos_pooling
+from rlhn.util import dot_score, mean_pooling, eos_pooling
 
 def main():
     import argparse

@@ -1,3 +1,5 @@
+from rlhn.dataloader import AirBenchDataLoader
+
 from beir import util, LoggingHandler
 from beir.retrieval import models
 from beir.datasets.data_loader import GenericDataLoader
@@ -21,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name_or_path", type=str, required=False)
     parser.add_argument("--datasets", type=str, nargs="+", required=True)
+    parser.add_argument("--benchmark", type=str, default="beir", choices=["beir", "air-bench"])
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--pooling", type=str, required=True, choices=['mean', 'cls'])
     parser.add_argument("--score_function", type=str, required=True, choices=['cos_sim', 'dot'])
@@ -45,18 +48,30 @@ def main():
 
     #### Download scifact.zip dataset and unzip the dataset
     for dataset in args.datasets:
-        
         if os.path.exists(os.path.join(args.output_dir, f"{dataset}.json")):
             print(f"Skipping {dataset} as it has already been evaluated.")
             continue
 
-        #### Download ${dataset}.zip dataset and unzip the dataset
-        url = f"https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{dataset}.zip"
-        out_dir = os.path.join(pathlib.Path(__file__).parent.absolute(), "datasets")
-        data_path = util.download_and_unzip(url, out_dir)
+        if args.benchmark == "beir":
+            #### Load the BEIR dataset
+            #### Download ${dataset}.zip dataset and unzip the dataset
+            url = f"https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{dataset}.zip"
+            out_dir = os.path.join(pathlib.Path(__file__).parent.absolute(), "datasets")
+            data_path = util.download_and_unzip(url, out_dir)
 
-        #### Provide the data_path where scifact has been downloaded and unzipped
-        corpus, queries, qrels = GenericDataLoader(data_folder=data_path).load(split="test")
+            #### Provide the data_path where scifact has been downloaded and unzipped
+            corpus, queries, qrels = GenericDataLoader(data_folder=data_path).load(split="test")
+        
+        elif args.benchmark == "air-bench":
+            #### Load the AIR-Bench dataset
+            dataloader = AirBenchDataLoader('AIR-Bench_24.05', cache_dir=args.cache_dir)
+            corpus, queries, qrels = dataloader.load(
+                task_type='qa', 
+                domain=dataset, 
+                language='en', 
+                dataset_name='default', 
+                split="dev"
+            )
         
         #### Load the Dense Retriever model
         model = DRES(dense_model, batch_size=args.batch_size)
