@@ -1,0 +1,71 @@
+[project]
+name = "rlhn"
+version = "0.0.1"
+description = "Identifying and relabeling false negatives in IR training datasets."
+license = { file = "LICENSE" }
+readme = "README.md"
+authors = [
+    { name = "Nandan Thakur", email = "nandant@gmail.com" },
+    { name = "Crystina Zhang", email = "xzhangbx@gmail.com" },
+    { name = "Xueguang Ma", email = "x93ma@uwaterloo.ca" },
+]
+requires-python = ">=3.10"
+keywords = [
+    "data curation",
+    "false negatives",
+    "LLM Judge",
+    "training dataset",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai",
+    "tevatron",
+    "beir",
+]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/castorini/rlhn"
+
+[tool.setuptools.packages.find]
+include = ["rlhn*"]
+namespaces = false
+
+[tool.ruff]
+line-length = 119
+fix = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+# Skip `E731` (do not assign a lambda expression, use a def)
+ignore = [
+    # LineTooLong
+    "E501",
+    # DoNotAssignLambda
+    "E731"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/**" = [
+    # Ignore `E402` (import violations) in all examples
+    "E402", 
+    # Ignore missing required imports
+    "I002"
+    ]
+
+[tool.ruff.lint.isort]
+known-third-party = ["datasets"]
+required-imports = ["from __future__ import annotations"]
