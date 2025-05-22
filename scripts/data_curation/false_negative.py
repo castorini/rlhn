@@ -1,11 +1,13 @@
-from rlhn import LoggingHandler
-from rlhn.prompts import RLHNPrompt
-from rlhn.dataset.filtering import RLHN
-from datasets import load_dataset
-import pyarrow.dataset as pds
-import pyarrow.compute as pc
-
 import random
+
+import pyarrow.compute as pc
+import pyarrow.dataset as pds
+from datasets import load_dataset
+
+from rlhn import LoggingHandler
+from rlhn.dataset.filtering import RLHN
+from rlhn.prompts import RLHNPrompt
+
 random.seed(42)
 
 
@@ -69,7 +71,6 @@ def main():
         model_name_or_path=args.model_name_or_path,
         output_dir=args.output_dir,
         output_file=args.output_file,
-        batch_jobs_csv=args.jobs_csv,
     )
 
     ### Check the cost of the dataset
